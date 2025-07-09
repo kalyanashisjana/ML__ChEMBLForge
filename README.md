@@ -9,8 +9,9 @@ The final output is a CSV containing valid SMILES, chemical descriptors, a novel
  Checks for novelty vs. the training set (canonical SMILES)
  Outputs a detailed CSV with descriptors, novelty flags, and summary statistics
 
-# Key points for how to use
+# How to use
 Prepare your input molecules as a CSV with SMILES strings (e.g., carboxylic-lipinksi5.csv). You can use this script to train small molecules with different functional groups or core groups of drug molecules. Run the script to train the LSTM on this input. The model generates new SELFIES strings and decodes them to SMILES.  Each molecule’s LogP, QED, PSA, HBA, and HBD are computed.  Only molecules satisfying Lipinski’s Rule of Five filter are kept, and non-drug-like molecules are filtered out. Output: generated_molecules.csv → includes descriptors + a novelty flag + summary stats. 
+**python small-molecule.py**
 # Requirements
 We need Python 3.8+, RDKit, PyTorch, pandas, and selfies.
 Install dependencies (example): 
@@ -20,8 +21,7 @@ pip install torch pandas selfies
 For RDKit, use conda:
 conda install -c conda-forge rdkit
 
-# Usage: 
-python small-molecule.py
+
 # Tuning Parameter
 **n_to_generate** → controls how many molecules to generate. Here, I used 50; one can use 1000 to generate a large number of molecules.
 
