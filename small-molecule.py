@@ -59,6 +59,22 @@ def decode_selfies(indices):
 
 X = torch.tensor([encode_selfies(s) for s in selfies_list])
 
+# === Custom scoring function ===
+def calc_score(qed, logp, psa):
+    # Scale parts to 0–1
+    qed_score = qed  # already 0–1
+
+    logp_target = 2  # ideal center
+    logp_range = 1   # allowed deviation
+    logp_score = max(0, 1 - abs(logp - logp_target) / logp_range)
+
+    psa_target = 75
+    psa_range = 25
+    psa_score = max(0, 1 - abs(psa - psa_target) / psa_range)
+
+    # Combine
+    score = 0.5 * qed_score + 0.25 * logp_score + 0.25 * psa_score
+    return score
 
 
 # === Model ===
@@ -66,10 +82,10 @@ class SMILESRNN(nn.Module):
     def __init__(self, vocab_size, embed_size=128, hidden_size=256):
         super().__init__()
         self.embed = nn.Embedding(vocab_size, embed_size, padding_idx=pad_idx)
-        self.lstm = nn.LSTM(embed_size, hidden_size, batch_first=True, num_layers=3)
+        self.lstm = nn.LSTM(embed_size, hidden_size, batch_first=True, num_layers=2)
 #        self.lstm = nn.LSTM(embed_size, hidden_size, batch_first=True)
         self.fc = nn.Linear(hidden_size, vocab_size)
-    
+
     def forward(self, x, hidden=None):
         emb = self.embed(x)
         output, hidden = self.lstm(emb, hidden)
@@ -120,7 +136,7 @@ generated = set()
 
 n_to_generate = 50
 attempts = 0
-max_attempts = n_to_generate * 5  # Allow some retries for invalids
+max_attempts = n_to_generate * 10  # Allow some retries for invalids
 
 while len(generated) < n_to_generate and attempts < max_attempts:
     new_smiles = sample_single(model, temperature=0.6)
@@ -148,7 +164,7 @@ for s in generated:
     psa = Descriptors.TPSA(mol)
     hba = Descriptors.NumHAcceptors(mol)
     hbd = Descriptors.NumHDonors(mol)
-
+    score = calc_score(qed, logp, psa)
     # Apply property filter
     if 0 < logp < 5 and psa < 140 and hba <= 10 and hbd <= 5:
         results.append({
@@ -159,7 +175,8 @@ for s in generated:
             "QED": qed,
             "TPSA": psa,
             "HAcceptors": hba,
-            "HDonors": hbd
+            "HDonors": hbd,
+            "Score": score
         })
 
 # === Compute overall novelty score ===
@@ -179,13 +196,14 @@ summary_df = pd.DataFrame([{
     "QED": "",
     "TPSA": "",
     "HAcceptors": "",
-    "HDonors": ""
+    "HDonors": "",
+    "Score": ""
 }])
 
 df_gen = pd.concat([df_gen, summary_df], ignore_index=True)
 
 # === Save ===
-df_gen.to_csv("generated_molecules-torch2b-1.csv", index=False)
-print("\n Saved generated molecules to generated_molecules-torch2b-1.csv")
+df_gen.to_csv("generated_molecules.csv", index=False)
+print("\n Saved generated molecules to generated_molecules.csv")
 print(df_gen.head())
 
