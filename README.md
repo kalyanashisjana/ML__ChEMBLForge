@@ -22,12 +22,13 @@ For RDKit, use conda:
 conda install -c conda-forge rdkit
 
 
-# Tuning Parameter
+# Tuning Parameters
 **n_to_generate** → controls how many molecules to generate. Here, I used 50; one can use 1000 to generate a large number of molecules.
 
 **max_attempts** → allows retries to ensure enough valid structures.
 
 **epochs** → more epochs = better training for complex SMILES.
+
 **num_layers** → Number of hidden layers. Increasing the number of layers takes more time. 
 
 Credit: Built using open-source libraries including PyTorch, RDKit, and SELFIES.
